@@ -1,0 +1,12 @@
+// RetailFlow business models use `@default(cuid())` for primary keys.
+// Auth models (User, Session, etc.) keep Better Auth–managed string IDs.
+// Map `id` → `_id` in API responses during migration for client compatibility.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

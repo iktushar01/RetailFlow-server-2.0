@@ -1,0 +1,44 @@
+model Grn {
+  id                       String    @id @default(cuid())
+  grnNumber                String    @unique
+  poId                     String
+  purchaseOrder            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
+  poNumber                 String?
+  supplierId               String
+  supplier                 Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  receivedDate             DateTime
+  destinationWarehouseId   String?
+  destinationWarehouse     Warehouse? @relation("GrnDestinationWarehouse", fields: [destinationWarehouseId], references: [id], onDelete: SetNull)
+  destinationWarehouseName String?
+  status                   GrnStatus @default(Pending)
+  notes                    String?
+  approvedAt               DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  items    GrnItem[]
+  payments SupplierPayment[]
+
+  @@index([poId])
+  @@index([supplierId])
+  @@index([status])
+  @@map("grn")
+}
+
+model GrnItem {
+  id          String   @id @default(cuid())
+  grnId       String
+  grn         Grn      @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String
+  orderedQty  Int      @default(0)
+  receivedQty Int      @default(0)
+  batch       String?
+  expiry      DateTime?
+  unitPrice   Decimal  @default(0) @db.Decimal(12, 2)
+
+  @@index([grnId])
+  @@index([productId])
+  @@map("grn_items")
+}

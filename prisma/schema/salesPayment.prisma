@@ -1,0 +1,21 @@
+model SalesPayment {
+  id            String            @id @default(cuid())
+  saleId        String?
+  sale          Sale?             @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  invoiceNo     String
+  customerId    String?
+  customer      Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName  String?
+  amount        Decimal           @db.Decimal(12, 2)
+  paymentMethod String?
+  status        SalePaymentStatus @default(Paid)
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([invoiceNo])
+  @@index([saleId])
+  @@index([customerId])
+  @@map("sales_payments")
+}

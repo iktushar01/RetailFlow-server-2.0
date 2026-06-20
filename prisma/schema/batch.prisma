@@ -1,0 +1,16 @@
+model Batch {
+  id                String    @id @default(cuid())
+  productId         String
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batchNumber       String
+  quantity          Int       @default(0)
+  expiry            DateTime?
+  manufacturingDate DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([productId, batchNumber])
+  @@index([productId])
+  @@map("batches")
+}

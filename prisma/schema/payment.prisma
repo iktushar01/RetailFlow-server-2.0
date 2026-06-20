@@ -1,0 +1,23 @@
+model SupplierPayment {
+  id         String                @id @default(cuid())
+  poId       String
+  purchaseOrder PurchaseOrder      @relation(fields: [poId], references: [id], onDelete: Restrict)
+  grnId      String?
+  grn        Grn?                  @relation(fields: [grnId], references: [id], onDelete: SetNull)
+  supplierId String
+  supplier   Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  poNumber   String?
+  grnNumber  String?
+  amountDue  Decimal               @db.Decimal(12, 2)
+  amountPaid Decimal               @default(0) @db.Decimal(12, 2)
+  status     SupplierPaymentStatus @default(Due)
+  dueDate    DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([poId])
+  @@index([supplierId])
+  @@index([status])
+  @@map("supplier_payments")
+}

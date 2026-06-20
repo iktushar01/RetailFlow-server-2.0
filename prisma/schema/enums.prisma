@@ -1,0 +1,73 @@
+enum Role {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// ─── RetailFlow domain enums ────────────────────────────────────────────────
+
+enum PurchaseOrderStatus {
+  Draft             @map("Draft")
+  Sent              @map("Sent")
+  PartiallyReceived @map("Partially Received")
+  FullyReceived     @map("Fully Received")
+  Cancelled         @map("Cancelled")
+}
+
+enum GrnStatus {
+  Pending  @map("Pending")
+  Approved @map("Approved")
+}
+
+enum SupplierPaymentStatus {
+  Due     @map("Due")
+  Paid    @map("Paid")
+  Partial @map("Partial")
+}
+
+enum SaleStatus {
+  Completed @map("Completed")
+  Hold      @map("Hold")
+  Cancelled @map("Cancelled")
+}
+
+enum SalePaymentStatus {
+  Paid    @map("Paid")
+  Due     @map("Due")
+  Partial @map("Partial")
+}
+
+enum DiscountType {
+  Percentage @map("Percentage")
+  Flat       @map("Flat")
+}
+
+enum DiscountStatus {
+  Active   @map("Active")
+  Inactive @map("Inactive")
+}
+
+enum ReturnStatus {
+  Pending  @map("Pending")
+  Approved @map("Approved")
+  Rejected @map("Rejected")
+}
+
+enum StockTransferStatus {
+  Completed @map("Completed")
+  Pending   @map("Pending")
+  Cancelled @map("Cancelled")
+}

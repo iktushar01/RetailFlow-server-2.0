@@ -1,0 +1,21 @@
+model Supplier {
+  id            String   @id @default(cuid())
+  supplierName  String
+  contactPerson String
+  email         String
+  phone         String
+  address       String
+  notes         String?
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+  grns           Grn[]
+  payments       SupplierPayment[]
+
+  @@index([supplierName])
+  @@index([email])
+  @@map("suppliers")
+}

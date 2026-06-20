@@ -1,0 +1,34 @@
+model Product {
+  id           String   @id @default(cuid())
+  productName  String
+  category     String
+  brand        String?
+  sku          String   @unique
+  description  String?
+  qrCode       String?  @unique
+  barcode      String?  @unique
+  supplierName String?
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  productImage String?
+  costPrice    Decimal  @default(0) @db.Decimal(12, 2)
+  sellingPrice Decimal  @default(0) @db.Decimal(12, 2)
+  reorderLevel Int      @default(10)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  inventoryItems     Inventory[]
+  purchaseOrderItems PurchaseOrderItem[]
+  grnItems           GrnItem[]
+  batches            Batch[]
+  saleItems          SaleItem[]
+  returnItems        ReturnItem[]
+  stockTransfers     StockTransfer[]
+  discountProducts   DiscountProduct[]
+
+  @@index([category])
+  @@index([supplierId])
+  @@index([productName])
+  @@map("products")
+}

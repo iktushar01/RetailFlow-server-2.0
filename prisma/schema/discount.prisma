@@ -1,0 +1,40 @@
+model Discount {
+  id        String         @id @default(cuid())
+  offerName String
+  code      String?        @unique
+  type      DiscountType
+  value     Decimal        @db.Decimal(12, 2)
+  validFrom DateTime
+  validTo   DateTime
+  status    DiscountStatus @default(Active)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  applicableProducts   DiscountProduct[]
+  applicableCategories DiscountCategory[]
+
+  @@index([status])
+  @@index([validFrom, validTo])
+  @@map("discounts")
+}
+
+model DiscountProduct {
+  id         String   @id @default(cuid())
+  discountId String
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([discountId, productId])
+  @@map("discount_products")
+}
+
+model DiscountCategory {
+  id         String   @id @default(cuid())
+  discountId String
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  category   String
+
+  @@unique([discountId, category])
+  @@map("discount_categories")
+}

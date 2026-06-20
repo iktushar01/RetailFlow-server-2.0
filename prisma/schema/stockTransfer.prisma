@@ -1,0 +1,20 @@
+model StockTransfer {
+  id                         String              @id @default(cuid())
+  productId                  String
+  product                    Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName                String
+  sourceWarehouseId          String?
+  sourceWarehouse            Warehouse?          @relation("TransferSourceWarehouse", fields: [sourceWarehouseId], references: [id], onDelete: SetNull)
+  sourceWarehouseName        String
+  destinationWarehouseId     String?
+  destinationWarehouse       Warehouse?          @relation("TransferDestinationWarehouse", fields: [destinationWarehouseId], references: [id], onDelete: SetNull)
+  destinationWarehouseName   String
+  quantity                   Int
+  status                     StockTransferStatus @default(Completed)
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
+
+  @@index([productId])
+  @@index([createdAt])
+  @@map("stock_transfers")
+}
