@@ -40,14 +40,14 @@ const buildCreateData = (payload: IProductPayload) => {
     return {
         productName: mapped.productName!,
         category: mapped.category!,
-        brand: mapped.brand,
+        brand: mapped.brand ?? null,
         sku: mapped.sku!,
-        description: mapped.description,
-        qrCode: mapped.qrCode,
-        barcode: mapped.barcode,
-        supplierName: mapped.supplierName,
+        description: mapped.description ?? null,
+        qrCode: mapped.qrCode ?? null,
+        barcode: mapped.barcode ?? null,
+        supplierName: mapped.supplierName ?? null,
         supplierId: mapped.supplierId ?? null,
-        productImage: mapped.productImage,
+        productImage: mapped.productImage ?? null,
         costPrice: mapped.costPrice ?? 0,
         sellingPrice: mapped.sellingPrice ?? 0,
         reorderLevel: mapped.reorderLevel ?? 10,
@@ -65,7 +65,6 @@ const buildUpdateData = (payload: IProductUpdatePayload) => {
         }
     });
 
-    delete data._id;
     return data;
 };
 

@@ -8,7 +8,7 @@ const getAll = catchAsync(async (_req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-    const product = await ProductService.getById(req.params.id);
+    const product = await ProductService.getById(String(req.params.id));
     res.send(product);
 });
 
@@ -19,12 +19,12 @@ const create = catchAsync(async (req: Request, res: Response) => {
 
 const update = catchAsync(async (req: Request, res: Response) => {
     const { _id, ...payload } = req.body;
-    const result = await ProductService.update(req.params.id, payload);
+    const result = await ProductService.update(String(req.params.id), payload);
     res.send(result);
 });
 
 const remove = catchAsync(async (req: Request, res: Response) => {
-    const result = await ProductService.remove(req.params.id);
+    const result = await ProductService.remove(String(req.params.id));
     res.send(result);
 });
 

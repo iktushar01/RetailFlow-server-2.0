@@ -35,7 +35,7 @@ const create = async (payload: ISupplierPayload) => {
             email: payload.email,
             phone: payload.phone,
             address: payload.address,
-            notes: payload.notes,
+            notes: payload.notes ?? null,
             status: payload.status ?? "Active",
         },
     });

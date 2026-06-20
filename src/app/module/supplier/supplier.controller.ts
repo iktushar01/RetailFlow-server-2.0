@@ -8,7 +8,7 @@ const getAll = catchAsync(async (_req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-    const supplier = await SupplierService.getById(req.params.id);
+    const supplier = await SupplierService.getById(String(req.params.id));
     res.send(supplier);
 });
 
@@ -18,12 +18,12 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-    const result = await SupplierService.update(req.params.id, req.body);
+    const result = await SupplierService.update(String(req.params.id), req.body);
     res.send(result);
 });
 
 const remove = catchAsync(async (req: Request, res: Response) => {
-    const result = await SupplierService.remove(req.params.id);
+    const result = await SupplierService.remove(String(req.params.id));
     res.send(result);
 });
 

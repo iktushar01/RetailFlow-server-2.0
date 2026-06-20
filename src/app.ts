@@ -5,6 +5,7 @@ import { toNodeHandler } from "better-auth/node";
 import path from "node:path";
 import { envVars } from "./config/env";
 import { IndexRoute } from "./app/routes/index";
+import { RetailRoute } from "./app/routes/retail.routes";
 import { globalErrorhandler } from "./app/middleware/globalErrorhandler";
 import { notFound } from "./app/middleware/notFound";
 import { auth } from "./app/lib/auth";
@@ -15,7 +16,7 @@ app.set("view engine", "ejs");
 app.set("views",path.resolve(process.cwd(), `src/app/templates`) )
 
 const corsOptions = {
-    origin: [envVars.FRONTEND_URL, envVars.BETTER_AUTH_URL, "http://localhost:3000", "http://localhost:5000"],
+    origin: [envVars.FRONTEND_URL, envVars.BETTER_AUTH_URL, "http://localhost:3000", "http://localhost:5173", "http://localhost:5000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -30,9 +31,11 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Acadex Server is running 🚀");
+  res.send("RetailFlow API server is running");
 });
 
+// RetailFlow client expects flat root paths (/products, /suppliers, …)
+app.use("/", RetailRoute);
 
 app.use("/api/v1", IndexRoute);
 
