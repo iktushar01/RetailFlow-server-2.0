@@ -7,6 +7,11 @@ import { InventoryRoutes } from "../module/inventory/inventory.route";
 import { PaymentRoutes } from "../module/payment/payment.route";
 import { WarehouseRoutes } from "../module/warehouse/warehouse.route";
 import { StockTransferRoutes } from "../module/stockTransfer/stockTransfer.route";
+import { SaleRoutes } from "../module/sale/sale.route";
+import { CustomerRoutes } from "../module/customer/customer.route";
+import { DiscountRoutes } from "../module/discount/discount.route";
+import { SalesPaymentRoutes } from "../module/salesPayment/salesPayment.route";
+import { ReturnRoutes } from "../module/return/return.route";
 
 const router = express.Router();
 
@@ -19,5 +24,10 @@ router.use("/inventory", InventoryRoutes);
 router.use("/payments", PaymentRoutes);
 router.use("/warehouses", WarehouseRoutes);
 router.use("/stock-transfers", StockTransferRoutes);
+router.use("/sales", SaleRoutes);
+router.use("/customers", CustomerRoutes);
+router.use("/discounts", DiscountRoutes);
+router.use("/sales-payments", SalesPaymentRoutes);
+router.use("/returns", ReturnRoutes);
 
 export const RetailRoute = router;

@@ -7,6 +7,11 @@ const getAll = catchAsync(async (_req: Request, res: Response) => {
     res.send(warehouses);
 });
 
+const getById = catchAsync(async (req: Request, res: Response) => {
+    const warehouse = await WarehouseService.getById(String(req.params.id));
+    res.send(warehouse);
+});
+
 const create = catchAsync(async (req: Request, res: Response) => {
     const result = await WarehouseService.create(req.body);
     res.send(result);
@@ -25,6 +30,7 @@ const remove = catchAsync(async (req: Request, res: Response) => {
 
 export const WarehouseController = {
     getAll,
+    getById,
     create,
     update,
     remove,

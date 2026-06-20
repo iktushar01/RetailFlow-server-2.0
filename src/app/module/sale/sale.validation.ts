@@ -27,6 +27,8 @@ export const createSaleSchema = z.object({
     notes: z.string().optional(),
 });
 
+export const updateSaleSchema = createSaleSchema.partial().passthrough();
+
 export const saleIdParamSchema = z.object({
     id: z.string().min(1),
 });

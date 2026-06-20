@@ -7,6 +7,7 @@ import {
     toMongoDocs,
     toMongoUpdateResult,
 } from "../../utils/mongoCompat";
+import { decimalToNumber } from "../../utils/retailFormatters";
 import {
     IProductPayload,
     IProductUpdatePayload,
@@ -114,10 +115,57 @@ const remove = async (id: string) => {
     return toMongoDeleteResult();
 };
 
+const getByBarcode = async (barcode: string) => {
+    const product = await prisma.product.findFirst({
+        where: {
+            OR: [{ barcode }, { qrCode: barcode }, { sku: barcode }],
+        },
+    });
+    if (!product) {
+        throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
+    }
+    return toMongoDoc(product);
+};
+
+const updatePrice = async (id: string, sellingPrice: number) => {
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+        throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
+    }
+    await prisma.product.update({ where: { id }, data: { sellingPrice } });
+    return toMongoUpdateResult();
+};
+
+const getTopSelling = async (limit = 5) => {
+    const items = await prisma.saleItem.groupBy({
+        by: ["productId"],
+        _sum: { quantity: true, subtotal: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: limit,
+    });
+
+    const products = await prisma.product.findMany({
+        where: { id: { in: items.map((item) => item.productId) } },
+    });
+    const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
+
+    return items.map((item) => {
+        const product = productMap[item.productId];
+        return {
+            ...(product ? toMongoDoc(product) : { _id: item.productId }),
+            quantitySold: item._sum.quantity || 0,
+            revenue: decimalToNumber(item._sum.subtotal),
+        };
+    });
+};
+
 export const ProductService = {
     getAll,
     getById,
+    getByBarcode,
+    getTopSelling,
     create,
     update,
+    updatePrice,
     remove,
 };

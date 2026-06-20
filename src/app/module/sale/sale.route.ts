@@ -6,6 +6,7 @@ import {
     saleAnalyticsQuerySchema,
     saleIdParamSchema,
     saleInvoiceParamSchema,
+    updateSaleSchema,
 } from "./sale.validation";
 
 const router = Router();
@@ -20,6 +21,12 @@ router.post("/hold", validateRequest(createSaleSchema), SaleController.hold);
 router.get("/", SaleController.getAll);
 router.get("/:id", validateRequest(saleIdParamSchema, "params"), SaleController.getById);
 router.post("/", validateRequest(createSaleSchema), SaleController.create);
+router.put(
+    "/:id",
+    validateRequest(saleIdParamSchema, "params"),
+    validateRequest(updateSaleSchema),
+    SaleController.update,
+);
 router.delete("/:id", validateRequest(saleIdParamSchema, "params"), SaleController.remove);
 
 export const SaleRoutes = router;

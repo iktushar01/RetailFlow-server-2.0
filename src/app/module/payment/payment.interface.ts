@@ -7,3 +7,15 @@ export interface ISupplierPaymentUpdatePayload {
     notes?: string;
     _id?: string;
 }
+
+export interface ISupplierPaymentPayload {
+    poId: string;
+    supplierId: string;
+    amountDue: number;
+    amountPaid?: number;
+    grnId?: string | null;
+    poNumber?: string | null;
+    grnNumber?: string | null;
+    status?: string;
+    dueDate?: string | Date | null;
+}

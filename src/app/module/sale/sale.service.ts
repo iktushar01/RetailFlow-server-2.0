@@ -216,6 +216,34 @@ const remove = async (id: string) => {
     return toMongoDeleteResult();
 };
 
+const update = async (id: string, payload: Partial<ISalePayload>) => {
+    const existing = await prisma.sale.findUnique({ where: { id }, include: saleInclude });
+    if (!existing) throw new AppError(StatusCodes.NOT_FOUND, "Sale not found");
+
+    const sale = await prisma.sale.update({
+        where: { id },
+        data: {
+            ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
+            ...(payload.customerName ? { customerName: payload.customerName } : {}),
+            ...(payload.customerPhone !== undefined ? { customerPhone: payload.customerPhone } : {}),
+            ...(payload.subtotal !== undefined ? { subtotal: payload.subtotal } : {}),
+            ...(payload.totalDiscount !== undefined ? { totalDiscount: payload.totalDiscount } : {}),
+            ...(payload.tax !== undefined ? { tax: payload.tax } : {}),
+            ...(payload.grandTotal !== undefined ? { grandTotal: payload.grandTotal } : {}),
+            ...(payload.paymentMethod !== undefined ? { paymentMethod: payload.paymentMethod } : {}),
+            ...(payload.paymentStatus
+                ? { paymentStatus: mapPaymentStatus(payload.paymentStatus) }
+                : {}),
+            ...(payload.amountPaid !== undefined ? { amountPaid: payload.amountPaid } : {}),
+            ...(payload.status ? { status: mapSaleStatus(payload.status) } : {}),
+            ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
+        },
+        include: saleInclude,
+    });
+
+    return formatSaleForClient(sale);
+};
+
 const getAnalytics = async (period = "week") => {
     const sales = await prisma.sale.findMany({
         where: { status: SaleStatus.Completed },
@@ -315,6 +343,7 @@ export const SaleService = {
     getByInvoiceNo,
     create,
     hold,
+    update,
     remove,
     getAnalytics,
     getSummary,

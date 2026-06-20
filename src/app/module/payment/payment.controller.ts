@@ -18,8 +18,20 @@ const update = catchAsync(async (req: Request, res: Response) => {
     res.send(result);
 });
 
+const create = catchAsync(async (req: Request, res: Response) => {
+    const payment = await PaymentService.create(req.body);
+    res.send(payment);
+});
+
+const remove = catchAsync(async (req: Request, res: Response) => {
+    const result = await PaymentService.remove(String(req.params.id));
+    res.send(result);
+});
+
 export const PaymentController = {
     getAll,
     getById,
+    create,
     update,
+    remove,
 };

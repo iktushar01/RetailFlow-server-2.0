@@ -10,6 +10,11 @@ import {
 const router = Router();
 
 router.get("/", WarehouseController.getAll);
+router.get(
+    "/:id",
+    validateRequest(warehouseIdParamSchema, "params"),
+    WarehouseController.getById,
+);
 router.post("/", validateRequest(createWarehouseSchema), WarehouseController.create);
 router.put(
     "/:id",

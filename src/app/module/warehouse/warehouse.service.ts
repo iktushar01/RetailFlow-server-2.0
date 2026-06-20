@@ -34,6 +34,23 @@ const getAll = async () => {
     return warehousesWithSummary;
 };
 
+const getById = async (id: string) => {
+    const warehouse = await prisma.warehouse.findUnique({ where: { id } });
+    if (!warehouse) {
+        throw new AppError(StatusCodes.NOT_FOUND, "Warehouse not found");
+    }
+
+    const inventoryItems = await prisma.inventory.findMany({
+        where: { location: warehouse.name },
+    });
+
+    return {
+        ...toMongoDoc(warehouse),
+        totalProducts: inventoryItems.length,
+        totalStock: inventoryItems.reduce((sum, item) => sum + (item.stockQty || 0), 0),
+    };
+};
+
 const create = async (payload: IWarehousePayload) => {
     const warehouse = await prisma.warehouse.create({
         data: {
@@ -94,6 +111,7 @@ const remove = async (id: string) => {
 
 export const WarehouseService = {
     getAll,
+    getById,
     create,
     update,
     remove,

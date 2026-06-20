@@ -36,5 +36,17 @@ export const productIdParamSchema = z.object({
     id: z.string().min(1, "Product id is required"),
 });
 
+export const productBarcodeParamSchema = z.object({
+    barcode: z.string().min(1, "Barcode is required"),
+});
+
+export const updateProductPriceSchema = z.object({
+    sellingPrice: z.coerce.number().nonnegative(),
+});
+
+export const topSellingQuerySchema = z.object({
+    limit: z.coerce.number().int().positive().optional(),
+});
+
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;

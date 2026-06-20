@@ -38,6 +38,12 @@ const remove = catchAsync(async (req: Request, res: Response) => {
     res.send(result);
 });
 
+const update = catchAsync(async (req: Request, res: Response) => {
+    const { _id, ...payload } = req.body;
+    const sale = await SaleService.update(String(req.params.id), payload);
+    res.send(sale);
+});
+
 const analytics = catchAsync(async (req: Request, res: Response) => {
     const period = typeof req.query.period === "string" ? req.query.period : "week";
     const data = await SaleService.getAnalytics(period);
@@ -78,6 +84,7 @@ export const SaleController = {
     getByInvoiceNo,
     create,
     hold,
+    update,
     remove,
     analytics,
     summary,

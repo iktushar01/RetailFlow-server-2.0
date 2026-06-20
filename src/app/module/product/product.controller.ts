@@ -28,10 +28,33 @@ const remove = catchAsync(async (req: Request, res: Response) => {
     res.send(result);
 });
 
+const getByBarcode = catchAsync(async (req: Request, res: Response) => {
+    const product = await ProductService.getByBarcode(String(req.params.barcode));
+    res.send(product);
+});
+
+const getTopSelling = catchAsync(async (req: Request, res: Response) => {
+    const products = await ProductService.getTopSelling(
+        req.query.limit ? Number(req.query.limit) : 5,
+    );
+    res.send(products);
+});
+
+const updatePrice = catchAsync(async (req: Request, res: Response) => {
+    const result = await ProductService.updatePrice(
+        String(req.params.id),
+        req.body.sellingPrice,
+    );
+    res.send(result);
+});
+
 export const ProductController = {
     getAll,
     getById,
+    getByBarcode,
+    getTopSelling,
     create,
     update,
+    updatePrice,
     remove,
 };
