@@ -50,63 +50,35 @@ const getCumulativeReceivedByPo = async (poId: string) => {
     return buildCumulativeReceivedSummary(grns);
 };
 
+import {
+    addStockAtLocation,
+    removeStockAtLocation,
+} from "../../utils/inventoryWarehouse";
+
 const upsertInventoryForReceipt = async (
     tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
     item: IGrnPayload["items"][number],
     destinationWarehouse: string,
 ) => {
-    if (item.receivedQty <= 0) return;
-
-    const existingInventory = await tx.inventory.findFirst({
-        where: { productId: item.productId },
-    });
-
-    if (existingInventory) {
-        await tx.inventory.update({
-            where: { id: existingInventory.id },
-            data: {
-                stockQty: existingInventory.stockQty + item.receivedQty,
-                ...(item.batch ? { batch: item.batch } : {}),
-                ...(item.expiry ? { expiry: parseDate(item.expiry) } : {}),
-            },
-        });
-        return;
-    }
-
-    await tx.inventory.create({
-        data: {
-            productId: item.productId,
-            productName: item.productName,
-            stockQty: item.receivedQty,
+    await addStockAtLocation(
+        tx,
+        item.productId,
+        item.productName,
+        item.receivedQty,
+        destinationWarehouse,
+        {
             batch: item.batch ?? null,
             expiry: parseDate(item.expiry),
-            location: destinationWarehouse,
         },
-    });
+    );
 };
 
 const revertInventoryForReceipt = async (
     tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
     item: { productId: string; receivedQty: number },
+    destinationWarehouse: string,
 ) => {
-    if (item.receivedQty <= 0) return;
-
-    const existingInventory = await tx.inventory.findFirst({
-        where: { productId: item.productId },
-    });
-
-    if (!existingInventory) return;
-
-    const newStockQty = Math.max(0, existingInventory.stockQty - item.receivedQty);
-    if (newStockQty === 0) {
-        await tx.inventory.delete({ where: { id: existingInventory.id } });
-        return;
-    }
-
-    await tx.inventory.update({
-        where: { id: existingInventory.id },
-        data: { stockQty: newStockQty },
-    });
+    await removeStockAtLocation(tx, item.productId, item.receivedQty, destinationWarehouse);
 };
 
 const syncPoAndPayment = async (
@@ -353,7 +325,11 @@ const remove = async (id: string) => {
 
     await prisma.$transaction(async (tx) => {
         for (const item of grn.items) {
-            await revertInventoryForReceipt(tx, item);
+            await revertInventoryForReceipt(
+                tx,
+                item,
+                grn.destinationWarehouseName ?? "Main Warehouse",
+            );
         }
 
         await tx.grn.delete({ where: { id } });

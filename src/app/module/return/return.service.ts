@@ -4,6 +4,7 @@ import { ReturnStatus } from "../../../generated/prisma";
 import { StatusCodes } from "http-status-codes";
 import { toMongoDeleteResult, toMongoDoc, toMongoDocs, toMongoUpdateResult } from "../../utils/mongoCompat";
 import { decimalToNumber } from "../../utils/retailFormatters";
+import { restockAtLocation } from "../../utils/inventoryWarehouse";
 import { IReturnPayload } from "./return.interface";
 
 const includeItems = { items: true } as const;
@@ -52,6 +53,24 @@ const create = async (payload: IReturnPayload) => {
     });
     if (!sale) throw new AppError(StatusCodes.NOT_FOUND, "Invoice not found");
 
+    for (const item of payload.items) {
+        const saleItem = sale.items.find((si) => si.productId === item.productId);
+        if (!saleItem) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Product ${item.productName} is not on invoice ${payload.invoiceNo}`,
+            );
+        }
+
+        const availableForReturn = Math.max(0, saleItem.quantity - (saleItem.returnedQuantity || 0));
+        if (item.quantity > availableForReturn) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Return quantity for ${item.productName} exceeds available amount. Available: ${availableForReturn}, Requested: ${item.quantity}`,
+            );
+        }
+    }
+
     const totalAmount = payload.items.reduce(
         (sum, item) => sum + item.quantity * item.unitPrice,
         0,
@@ -98,22 +117,12 @@ const approve = async (id: string) => {
 
     await prisma.$transaction(async (tx) => {
         for (const item of record.items) {
-            const existing = await tx.inventory.findFirst({ where: { productId: item.productId } });
-            if (existing) {
-                await tx.inventory.update({
-                    where: { id: existing.id },
-                    data: { stockQty: existing.stockQty + item.quantity },
-                });
-            } else {
-                await tx.inventory.create({
-                    data: {
-                        productId: item.productId,
-                        productName: item.productName,
-                        stockQty: item.quantity,
-                        location: "Main Warehouse",
-                    },
-                });
-            }
+            await restockAtLocation(
+                tx,
+                item.productId,
+                item.productName,
+                item.quantity,
+            );
 
             if (item.saleItemId) {
                 const saleItem = await tx.saleItem.findUnique({ where: { id: item.saleItemId } });

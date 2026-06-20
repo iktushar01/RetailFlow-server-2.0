@@ -9,6 +9,7 @@ import { toMongoDeleteResult } from "../../utils/mongoCompat";
 import { decimalToNumber } from "../../utils/retailFormatters";
 import { formatSaleForClient, formatSalesForClient } from "./sale.helpers";
 import { ISalePayload, ISaleQuery } from "./sale.interface";
+import { restockAtLocation } from "../../utils/inventoryWarehouse";
 
 const saleInclude = { items: true } as const;
 
@@ -29,6 +30,12 @@ const deductInventory = async (
     productId: string,
     quantity: number,
 ) => {
+    await tx.$executeRaw`
+        SELECT id FROM inventory
+        WHERE "productId" = ${productId} AND "stockQty" > 0
+        FOR UPDATE
+    `;
+
     let remaining = quantity;
     const rows = await tx.inventory.findMany({
         where: { productId, stockQty: { gt: 0 } },
@@ -64,25 +71,7 @@ const restockInventory = async (
     productId: string,
     productName: string,
     quantity: number,
-) => {
-    const existing = await tx.inventory.findFirst({ where: { productId } });
-    if (existing) {
-        await tx.inventory.update({
-            where: { id: existing.id },
-            data: { stockQty: existing.stockQty + quantity },
-        });
-        return;
-    }
-
-    await tx.inventory.create({
-        data: {
-            productId,
-            productName,
-            stockQty: quantity,
-            location: "Main Warehouse",
-        },
-    });
-};
+) => restockAtLocation(tx, productId, productName, quantity);
 
 const createSaleRecord = async (payload: ISalePayload, isHold: boolean) => {
     const status = mapSaleStatus(payload.status, isHold);
@@ -220,25 +209,56 @@ const update = async (id: string, payload: Partial<ISalePayload>) => {
     const existing = await prisma.sale.findUnique({ where: { id }, include: saleInclude });
     if (!existing) throw new AppError(StatusCodes.NOT_FOUND, "Sale not found");
 
-    const sale = await prisma.sale.update({
-        where: { id },
-        data: {
-            ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
-            ...(payload.customerName ? { customerName: payload.customerName } : {}),
-            ...(payload.customerPhone !== undefined ? { customerPhone: payload.customerPhone } : {}),
-            ...(payload.subtotal !== undefined ? { subtotal: payload.subtotal } : {}),
-            ...(payload.totalDiscount !== undefined ? { totalDiscount: payload.totalDiscount } : {}),
-            ...(payload.tax !== undefined ? { tax: payload.tax } : {}),
-            ...(payload.grandTotal !== undefined ? { grandTotal: payload.grandTotal } : {}),
-            ...(payload.paymentMethod !== undefined ? { paymentMethod: payload.paymentMethod } : {}),
-            ...(payload.paymentStatus
-                ? { paymentStatus: mapPaymentStatus(payload.paymentStatus) }
-                : {}),
-            ...(payload.amountPaid !== undefined ? { amountPaid: payload.amountPaid } : {}),
-            ...(payload.status ? { status: mapSaleStatus(payload.status) } : {}),
-            ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
-        },
-        include: saleInclude,
+    const previousStatus = existing.status;
+    const nextStatus = payload.status ? mapSaleStatus(payload.status) : previousStatus;
+
+    const sale = await prisma.$transaction(async (tx) => {
+        if (previousStatus !== nextStatus) {
+            if (previousStatus === SaleStatus.Hold && nextStatus === SaleStatus.Completed) {
+                for (const item of existing.items) {
+                    const totalStock = await tx.inventory.aggregate({
+                        where: { productId: item.productId },
+                        _sum: { stockQty: true },
+                    });
+                    const available = totalStock._sum.stockQty || 0;
+                    if (available < item.quantity) {
+                        throw new AppError(
+                            StatusCodes.BAD_REQUEST,
+                            `Insufficient stock for ${item.productName}. Available: ${available}, Requested: ${item.quantity}`,
+                        );
+                    }
+                    await deductInventory(tx, item.productId, item.quantity);
+                }
+            } else if (
+                previousStatus === SaleStatus.Completed &&
+                (nextStatus === SaleStatus.Hold || nextStatus === SaleStatus.Cancelled)
+            ) {
+                for (const item of existing.items) {
+                    await restockInventory(tx, item.productId, item.productName, item.quantity);
+                }
+            }
+        }
+
+        return tx.sale.update({
+            where: { id },
+            data: {
+                ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
+                ...(payload.customerName ? { customerName: payload.customerName } : {}),
+                ...(payload.customerPhone !== undefined ? { customerPhone: payload.customerPhone } : {}),
+                ...(payload.subtotal !== undefined ? { subtotal: payload.subtotal } : {}),
+                ...(payload.totalDiscount !== undefined ? { totalDiscount: payload.totalDiscount } : {}),
+                ...(payload.tax !== undefined ? { tax: payload.tax } : {}),
+                ...(payload.grandTotal !== undefined ? { grandTotal: payload.grandTotal } : {}),
+                ...(payload.paymentMethod !== undefined ? { paymentMethod: payload.paymentMethod } : {}),
+                ...(payload.paymentStatus
+                    ? { paymentStatus: mapPaymentStatus(payload.paymentStatus) }
+                    : {}),
+                ...(payload.amountPaid !== undefined ? { amountPaid: payload.amountPaid } : {}),
+                ...(payload.status ? { status: nextStatus } : {}),
+                ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
+            },
+            include: saleInclude,
+        });
     });
 
     return formatSaleForClient(sale);
@@ -287,10 +307,29 @@ const getSummary = async (dateFrom?: string, dateTo?: string) => {
         0,
     );
 
+    const productIds = [...new Set(sales.flatMap((sale) => sale.items.map((item) => item.productId)))];
+    const products = productIds.length
+        ? await prisma.product.findMany({ where: { id: { in: productIds } } })
+        : [];
+    const costByProduct = new Map(
+        products.map((product) => [product.id, decimalToNumber(product.costPrice)]),
+    );
+
+    let totalCOGS = 0;
+    for (const sale of sales) {
+        for (const item of sale.items) {
+            const unitCost = costByProduct.get(item.productId) ?? 0;
+            totalCOGS += unitCost * item.quantity;
+        }
+    }
+
+    const totalProfit = totalAmount - totalCOGS;
+
     return {
         totalSales: sales.length,
         totalAmount,
-        totalProfit: 0, // TODO: compute from costPrice when COGS tracking is added
+        totalProfit,
+        totalCOGS,
         averageOrderValue: sales.length ? totalAmount / sales.length : 0,
         topProducts: [],
         salesTrend: [],
@@ -329,12 +368,42 @@ const getByDateRange = async (dateFrom: string, dateTo: string) => {
 };
 
 const exportData = async () => {
-    const sales = await getAll();
-    return {
-        format: "csv",
-        rows: sales,
-        // TODO: stream CSV file download
-    };
+    const sales = await prisma.sale.findMany({
+        include: saleInclude,
+        orderBy: { createdAt: "desc" },
+    });
+
+    const header = [
+        "invoiceNo",
+        "customerName",
+        "status",
+        "paymentStatus",
+        "subtotal",
+        "totalDiscount",
+        "tax",
+        "grandTotal",
+        "amountPaid",
+        "paymentMethod",
+        "createdAt",
+    ].join(",");
+
+    const rows = sales.map((sale) =>
+        [
+            sale.invoiceNo,
+            `"${sale.customerName.replace(/"/g, '""')}"`,
+            sale.status,
+            sale.paymentStatus,
+            decimalToNumber(sale.subtotal),
+            decimalToNumber(sale.totalDiscount),
+            decimalToNumber(sale.tax),
+            decimalToNumber(sale.grandTotal),
+            decimalToNumber(sale.amountPaid),
+            sale.paymentMethod ?? "",
+            sale.createdAt.toISOString(),
+        ].join(","),
+    );
+
+    return [header, ...rows].join("\n");
 };
 
 export const SaleService = {

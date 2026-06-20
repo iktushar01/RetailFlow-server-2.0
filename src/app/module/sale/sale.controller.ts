@@ -74,8 +74,10 @@ const dateRange = catchAsync(async (req: Request, res: Response) => {
 });
 
 const exportData = catchAsync(async (_req: Request, res: Response) => {
-    const data = await SaleService.exportData();
-    sendResponse(res, { statusCode: StatusCodes.OK, success: true, data });
+    const csv = await SaleService.exportData();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="sales-export.csv"');
+    res.send(csv);
 });
 
 export const SaleController = {
