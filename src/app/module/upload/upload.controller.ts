@@ -5,13 +5,20 @@ import { catchAsync } from "../../shared/catchAsync";
 import { StatusCodes } from "http-status-codes";
 
 const uploadImage = catchAsync(async (req: Request, res: Response) => {
-    if (!req.file?.buffer) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "Image file is required");
+    const file = req.file;
+
+    if (!file?.buffer?.length) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            file
+                ? "Uploaded image file is empty"
+                : "Image file is required. Send multipart field name \"image\".",
+        );
     }
 
     const result = await uploadFileToCloudinary(
-        req.file.buffer,
-        req.file.originalname || `product-${Date.now()}.png`,
+        file.buffer,
+        file.originalname || `product-${Date.now()}.png`,
         "RetailFlow",
     );
 
