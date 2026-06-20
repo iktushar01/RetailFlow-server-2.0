@@ -13,7 +13,3 @@ export const createWarehouseSchema = z.object({
 });
 
 export const updateWarehouseSchema = createWarehouseSchema.partial().passthrough();
-
-export const warehouseIdParamSchema = z.object({
-    id: z.string().min(1, "Warehouse id is required"),
-});

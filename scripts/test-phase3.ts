@@ -2,6 +2,8 @@
  * Manual smoke test for Phase 3 retail endpoints.
  * Run: npx tsx scripts/test-phase3.ts
  */
+import { prisma } from "../src/app/lib/prisma";
+
 const BASE = process.env.API_BASE_URL || "http://localhost:5000";
 
 const request = async (
@@ -108,6 +110,54 @@ const run = async () => {
         warehouses.data?.[0]?.totalProducts,
     );
 
+    const srcWh = `ST-SRC-${Date.now()}`;
+    const dstWh = `ST-DST-${Date.now()}`;
+    await request("POST", "/warehouses", { name: srcWh });
+    await request("POST", "/warehouses", { name: dstWh });
+    await prisma.inventory.create({
+        data: {
+            productId: product.data?._id,
+            productName: product.data?.productName,
+            stockQty: 10,
+            location: srcWh,
+        },
+    });
+
+    const transfer = await request("POST", "/stock-transfers", {
+        productId: product.data?._id,
+        sourceWarehouse: srcWh,
+        destinationWarehouse: dstWh,
+        quantity: 2,
+    });
+    console.log("POST /stock-transfers", transfer.status, transfer.data?.message);
+
+    const inventory = await prisma.inventory.findFirst({
+        where: { productId: product.data?._id, location: srcWh },
+    });
+    if (inventory) {
+        const barcode = await request("PATCH", `/inventory/${inventory.id}/barcode`, {
+            barcode: `BC-${Date.now()}`,
+        });
+        console.log("PATCH /inventory/:id/barcode", barcode.status, barcode.data?.message);
+    }
+
+    if (payments.data?.[0]?._id) {
+        const paymentUpdate = await request(
+            "PUT",
+            `/payments/${payments.data[0]._id}`,
+            {
+                amountDue: payments.data[0].amountDue,
+                amountPaid: payments.data[0].amountDue,
+            },
+        );
+        console.log(
+            "PUT /payments/:id",
+            paymentUpdate.status,
+            paymentUpdate.data?.message,
+        );
+    }
+
+    await prisma.$disconnect();
     console.log("Done.");
 };
 
