@@ -1,4 +1,5 @@
 import express from "express";
+import { requireRetailAuth } from "../middleware/requireRetailAuth";
 import { ProductRoutes } from "../module/product/product.route";
 import { SupplierRoutes } from "../module/supplier/supplier.route";
 import { PurchaseOrderRoutes } from "../module/purchaseOrder/purchaseOrder.route";
@@ -12,8 +13,11 @@ import { CustomerRoutes } from "../module/customer/customer.route";
 import { DiscountRoutes } from "../module/discount/discount.route";
 import { SalesPaymentRoutes } from "../module/salesPayment/salesPayment.route";
 import { ReturnRoutes } from "../module/return/return.route";
+import { BatchRoutes } from "../module/batch/batch.route";
 
 const router = express.Router();
+
+router.use(requireRetailAuth);
 
 router.use("/suppliers/payments", PaymentRoutes);
 router.use("/suppliers", SupplierRoutes);
@@ -29,5 +33,6 @@ router.use("/customers", CustomerRoutes);
 router.use("/discounts", DiscountRoutes);
 router.use("/sales-payments", SalesPaymentRoutes);
 router.use("/returns", ReturnRoutes);
+router.use("/batches", BatchRoutes);
 
 export const RetailRoute = router;
