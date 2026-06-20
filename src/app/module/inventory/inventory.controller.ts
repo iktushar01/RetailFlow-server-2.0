@@ -2,10 +2,14 @@ import { Request, Response } from "express";
 import { catchAsync } from "../../shared/catchAsync";
 import { InventoryService } from "./inventory.service";
 
-const notImplemented = catchAsync(async (_req: Request, _res: Response) => {
-    InventoryService.notImplemented();
+const updateBarcode = catchAsync(async (req: Request, res: Response) => {
+    const result = await InventoryService.updateBarcode(
+        String(req.params.id),
+        req.body,
+    );
+    res.send(result);
 });
 
 export const InventoryController = {
-    notImplemented,
+    updateBarcode,
 };

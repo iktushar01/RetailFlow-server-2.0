@@ -1,5 +1,9 @@
 import z from "zod";
 
-export const stockTransferIdParamSchema = z.object({
-    id: z.string().min(1, "Stock transfer id is required"),
+export const createStockTransferSchema = z.object({
+    productId: z.string().min(1, "Product id is required"),
+    productName: z.string().optional(),
+    sourceWarehouse: z.string().min(1, "Source warehouse is required"),
+    destinationWarehouse: z.string().min(1, "Destination warehouse is required"),
+    quantity: z.coerce.number().int().positive(),
 });

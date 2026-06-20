@@ -1,7 +1,4 @@
-export interface IInventoryParams {
-    id: string;
-}
-
-export interface IInventoryProductParams {
-    productId: string;
+export interface IInventoryBarcodePayload {
+    barcode?: string;
+    qrCode?: string;
 }
