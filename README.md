@@ -1,91 +1,102 @@
-# Express Prisma Auth Server
+# Express Prisma Auth Server (RetailFlow 2.0 API)
 
-Express Prisma Auth Server is the developer-friendly backend for Starter. It powers authentication and admin workflows through a modular Express + Prisma API.
+Backend for **RetailFlow-client**: PostgreSQL + Prisma + Express + Better Auth. Replaces the deprecated MongoDB **RetailFlow-server**.
 
 ## Features
 
-- Better Auth based auth system with email/password and Google login
-- JWT access and refresh token flow
+- RetailFlow domain API at flat root paths (`/products`, `/sales`, `/suppliers`, …)
+- Mongo-compatible `_id` responses for the existing React client
+- Better Auth (email/password, Google) + JWT access tokens
+- Optional retail route protection via `REQUIRE_AUTH` (off by default for local dev)
 - Prisma-powered PostgreSQL data layer
-- Modular route structure for auth, users, and admins
-- Cloudinary-based media upload pipeline
-- OTP email verification and password reset flow
-- TypeScript-first codebase with validation and reusable utilities
+- TypeScript-first codebase with Zod validation
 
-## Technologies Used
+See **[MIGRATION.md](./MIGRATION.md)** for auth rules, data migration, and known gaps.
 
-- Node.js
-- Express 5
-- TypeScript
-- Prisma
-- PostgreSQL
-- Better Auth
-- Zod
-- Cloudinary
-- Nodemailer
-- JWT
-- Vercel
+## Running old vs new server
 
-## Setup Instructions
+| | Old (deprecated) | New (use this) |
+|--|------------------|----------------|
+| Folder | `RetailFlow-server/` | `prisma-express-server-template/` |
+| Stack | MongoDB + plain Express JS | PostgreSQL + Prisma + TypeScript |
+| Start | `cd server && npm run dev` | `pnpm run dev` |
+| Default URL | varies | http://localhost:5000 |
+| Client env | `VITE_API_BASE_URL=…` | `VITE_API_BASE_URL=http://localhost:5000` |
+
+**RetailFlow-server** is marked deprecated in `RetailFlow-server/DEPRECATED.md`. Keep it for reference only.
+
+## Setup
 
 ### 1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
-### 2. Create your environment file
+### 2. Environment
 
-Copy `.env.example` to `.env` and update the values.
-
-Required variables include:
+Copy `.env.example` to `.env`. Key values:
 
 ```env
 PORT=5000
 DATABASE_URL=your_database_url
-BETTER_AUTH_SECRET=your_better_auth_secret
 BETTER_AUTH_URL=http://localhost:5000
-FRONTEND_URL=http://localhost:3000
-NODE_ENV=development
-ACCESS_TOKEN_SECRET=your_access_token_secret
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_email_app_password
-EMAIL_FROM="Acadex <your_email@gmail.com>"
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-SUPER_ADMIN_EMAIL=your_super_admin_email
-SUPER_ADMIN_PASSWORD=your_super_admin_password
+FRONTEND_URL=http://localhost:5173
+REQUIRE_AUTH=false
 ```
 
-### 3. Start the development server
+`FRONTEND_URL` must match the Vite client origin for CORS cookies (`http://localhost:5173`).
+
+### 3. Database
 
 ```bash
-npm run dev
+pnpm exec prisma migrate deploy
+pnpm exec prisma generate
 ```
 
-The API will run at [http://localhost:5000](http://localhost:5000).
-
-### 4. Build the server
+Optional one-time data import from MongoDB:
 
 ```bash
-npm run build
+pnpm run migrate:data -- --dry-run
+pnpm run migrate:data
 ```
 
-### 5. Run the server
+### 4. Start API
 
 ```bash
-npm run start
+pnpm run dev
 ```
 
-## API Modules
+API: http://localhost:5000  
+Client (separate repo folder): `RetailFlow-client` → `pnpm run dev` → http://localhost:5173
 
-- `/api/v1/auth`
-- `/api/v1/users`
-- `/api/v1/admins`
+### 5. Integration smoke test
+
+With the API running:
+
+```bash
+pnpm run test:integration
+```
+
+## API layout
+
+**Retail (client-facing, root paths):**
+
+- `/suppliers`, `/products`, `/purchase-orders`, `/grn`, `/inventory`
+- `/payments`, `/suppliers/payments`, `/warehouses`, `/stock-transfers`, `/batches`
+- `/sales`, `/customers`, `/discounts`, `/sales-payments`, `/returns`
+
+**Auth / admin (prefixed):**
+
+- `/api/auth/*` — Better Auth
+- `/api/v1/auth`, `/api/v1/users`, `/api/v1/admins`
+
+## Production auth
+
+Set `REQUIRE_AUTH=true` to require login for retail write operations. The client must send cookies (`withCredentials: true` — already configured in `RetailFlow-client/src/config/apiConfig.js`).
+
+## Technologies
+
+- Node.js, Express 5, TypeScript, Prisma, PostgreSQL
+- Better Auth, Zod, JWT, Nodemailer, Cloudinary
+

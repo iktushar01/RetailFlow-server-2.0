@@ -94,7 +94,6 @@ The new server keeps Mongo-style responses for the React client:
 
 | Endpoint / feature | Status | Client reference |
 |--------------------|--------|------------------|
-| `GET /discounts/:id` | Not implemented | `InventoryPages/services/inventoryService.js` |
 | Sales COGS / `totalProfit` in analytics | TODO stub | `SalesReports/services/salesReportsService.js` |
 | `GET /sales/export` CSV download | Returns JSON rows only | `salesReportsService.js` |
 | ImgBB upload | External API, not server | `ProductPages/services/productService.js` |
