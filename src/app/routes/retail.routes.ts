@@ -14,10 +14,13 @@ import { DiscountRoutes } from "../module/discount/discount.route";
 import { SalesPaymentRoutes } from "../module/salesPayment/salesPayment.route";
 import { ReturnRoutes } from "../module/return/return.route";
 import { BatchRoutes } from "../module/batch/batch.route";
+import { UploadRoutes } from "../module/upload/upload.route";
 
 const router = express.Router();
 
 router.use(requireRetailAuth);
+
+router.use("/upload", UploadRoutes);
 
 router.use("/suppliers/payments", PaymentRoutes);
 router.use("/suppliers", SupplierRoutes);

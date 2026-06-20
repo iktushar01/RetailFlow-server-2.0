@@ -72,6 +72,7 @@ All **write** methods on these path prefixes require authentication:
 | `/sales-payments` | POST, PUT, DELETE |
 | `/returns` | POST, PATCH, DELETE |
 | `/batches` | POST, PUT, DELETE |
+| `/upload` | POST |
 
 **Public (always):** all `GET` routes above, plus `/` health check.
 
@@ -96,7 +97,8 @@ The new server keeps Mongo-style responses for the React client:
 |--------------------|--------|------------------|
 | Sales COGS / `totalProfit` in analytics | TODO stub | `SalesReports/services/salesReportsService.js` |
 | `GET /sales/export` CSV download | Returns JSON rows only | `salesReportsService.js` |
-| ImgBB upload | External API, not server | `ProductPages/services/productService.js` |
+
+**Product images:** `POST /upload/image` uploads to Cloudinary (`RetailFlow/images`). Requires `CLOUDINARY_*` env vars on the server. Client: `ProductPages/services/productService.js`.
 
 Run integration smoke test:
 

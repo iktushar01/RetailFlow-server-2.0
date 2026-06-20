@@ -97,6 +97,7 @@ export const normalizeCloudinaryUrl = (url: string, fileName?: string | null) =>
 export const uploadFileToCloudinary = async (
     buffer: Buffer,
     fileName: string,
+    folderPrefix = "Acadex",
 ): Promise<UploadApiResponse> => {
     if (!buffer || !fileName) {
         throw new AppError(StatusCodes.BAD_REQUEST, "File buffer and file name are required for upload");
@@ -119,7 +120,7 @@ export const uploadFileToCloudinary = async (
             {
                 resource_type: resourceType,
                 public_id: uniqueName,
-                folder: `Acadex/${folder}`,
+                folder: `${folderPrefix}/${folder}`,
                 use_filename: false,
                 unique_filename: false,
             },
