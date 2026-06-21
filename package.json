@@ -8,7 +8,7 @@
   "packageManager": "pnpm@10.34.4",
   "main": "src/server.ts",
   "engines": {
-    "node": "20.18.0",
+    "node": "22.12.0",
     "pnpm": "10.34.4"
   },
   "scripts": {
