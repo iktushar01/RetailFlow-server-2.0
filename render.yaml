@@ -1,14 +1,14 @@
 # Dashboard services ignore this file unless deployed as a Blueprint.
 # In Render Settings set:
 # Root Directory = (empty)
-# Build Command = corepack enable && pnpm install --frozen-lockfile
+# Build Command = npm install -g pnpm@11.8.0 && pnpm install --frozen-lockfile
 # Start Command = node src/server.js
 services:
   - type: web
     name: retailflow-server
     runtime: node
     plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    buildCommand: npm install -g pnpm@11.8.0 && pnpm install --frozen-lockfile
     startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
