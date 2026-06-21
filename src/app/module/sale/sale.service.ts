@@ -264,26 +264,88 @@ const update = async (id: string, payload: Partial<ISalePayload>) => {
     return formatSaleForClient(sale);
 };
 
+const getPeriodBounds = (period: string): { start: Date; end: Date } => {
+    const end = new Date();
+    const start = new Date();
+
+    switch (period.toLowerCase()) {
+        case "today":
+        case "day":
+            start.setHours(0, 0, 0, 0);
+            break;
+        case "month":
+            start.setDate(start.getDate() - 29);
+            start.setHours(0, 0, 0, 0);
+            break;
+        case "week":
+        default:
+            start.setDate(start.getDate() - 6);
+            start.setHours(0, 0, 0, 0);
+            break;
+    }
+
+    return { start, end };
+};
+
 const getAnalytics = async (period = "week") => {
+    const normalizedPeriod = period.toLowerCase();
+    const { start, end } = getPeriodBounds(normalizedPeriod);
+
     const sales = await prisma.sale.findMany({
-        where: { status: SaleStatus.Completed },
+        where: {
+            status: SaleStatus.Completed,
+            createdAt: { gte: start, lte: end },
+        },
         orderBy: { createdAt: "asc" },
     });
 
-    const buckets: Record<string, number> = {};
-    sales.forEach((sale) => {
-        const key = new Date(sale.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
+    if (normalizedPeriod === "today" || normalizedPeriod === "day") {
+        const hourlyBuckets: Record<number, { revenue: number; salesCount: number }> = {};
+        for (let hour = 0; hour < 24; hour++) {
+            hourlyBuckets[hour] = { revenue: 0, salesCount: 0 };
+        }
+
+        sales.forEach((sale) => {
+            const hour = new Date(sale.createdAt).getHours();
+            hourlyBuckets[hour].revenue += decimalToNumber(sale.grandTotal);
+            hourlyBuckets[hour].salesCount += 1;
         });
-        buckets[key] = (buckets[key] || 0) + decimalToNumber(sale.grandTotal);
+
+        const labels = Array.from({ length: 24 }, (_, hour) => `${hour}:00`);
+        const revenue = labels.map((_, hour) => hourlyBuckets[hour].revenue);
+        const salesCount = labels.map((_, hour) => hourlyBuckets[hour].salesCount);
+
+        return { labels, data: revenue, revenue, salesCount, period: normalizedPeriod };
+    }
+
+    const dailyBuckets = new Map<string, { revenue: number; salesCount: number; sortKey: number }>();
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+    const endDay = new Date(end);
+    endDay.setHours(0, 0, 0, 0);
+
+    while (cursor <= endDay) {
+        const label = cursor.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        dailyBuckets.set(label, { revenue: 0, salesCount: 0, sortKey: cursor.getTime() });
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    sales.forEach((sale) => {
+        const saleDate = new Date(sale.createdAt);
+        const label = saleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const bucket = dailyBuckets.get(label);
+        if (bucket) {
+            bucket.revenue += decimalToNumber(sale.grandTotal);
+            bucket.salesCount += 1;
+        }
     });
 
-    return {
-        labels: Object.keys(buckets),
-        data: Object.values(buckets),
-        period,
-    };
+    const sorted = [...dailyBuckets.entries()].sort((a, b) => a[1].sortKey - b[1].sortKey);
+    const labels = sorted.map(([label]) => label);
+    const revenue = sorted.map(([, bucket]) => bucket.revenue);
+    const salesCount = sorted.map(([, bucket]) => bucket.salesCount);
+
+    return { labels, data: revenue, revenue, salesCount, period: normalizedPeriod };
 };
 
 const getSummary = async (dateFrom?: string, dateTo?: string) => {
@@ -336,9 +398,22 @@ const getSummary = async (dateFrom?: string, dateTo?: string) => {
     };
 };
 
-const getTopProducts = async (limit = 5) => {
+const getTopProducts = async (limit = 5, dateFrom?: string, dateTo?: string) => {
+    const saleFilter: {
+        status: SaleStatus;
+        createdAt?: { gte?: Date; lte?: Date };
+    } = { status: SaleStatus.Completed };
+
+    if (dateFrom || dateTo) {
+        saleFilter.createdAt = {
+            ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+            ...(dateTo ? { lte: new Date(dateTo) } : {}),
+        };
+    }
+
     const items = await prisma.saleItem.groupBy({
         by: ["productId", "productName"],
+        where: { sale: saleFilter },
         _sum: { quantity: true, subtotal: true },
         orderBy: { _sum: { quantity: "desc" } },
         take: limit,

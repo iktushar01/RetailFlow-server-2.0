@@ -3,40 +3,29 @@ import { StatusCodes } from "http-status-codes";
 import { envVars } from "../../../config/env";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
-import { cookieUtils } from "../../utils/cookies";
 import { tokenUtils } from "../../utils/token";
 import { auth } from "../../lib/auth";
 import AppError from "../../errorHelpers/AppError";
 import { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
-import ms, { StringValue } from "ms";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Writes all three auth cookies in one call. */
+/** Writes all three auth cookies in one call. Clears stale cookies first. */
 const setAuthCookies = (
     res: Response,
     tokens: { accessToken: string; refreshToken: string; sessionToken?: string } ,
 ) => {
+    tokenUtils.clearAllAuthCookies(res);
     tokenUtils.getAccessTokenFromCookie(res, tokens.accessToken);
     tokenUtils.getRefreshTokenFromCookie(res, tokens.refreshToken);
     if (tokens.sessionToken) {
         tokenUtils.getBetterAuthAccessToken(res, tokens.sessionToken);
-        res.cookie("better-auth.session_token", tokens.sessionToken, {
-            httpOnly: true,
-            secure: envVars.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-            maxAge: ms(envVars.BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN as StringValue),
-        });
     }
 };
 
 const clearAuthCookies = (res: Response) => {
-    const opts = { httpOnly: true, secure: true, sameSite: "none" as const };
-    cookieUtils.clearCookie(res, "accessToken", opts);
-    cookieUtils.clearCookie(res, "refreshToken", opts);
-    cookieUtils.clearCookie(res, "better-auth.session_token", opts);
+    tokenUtils.clearAllAuthCookies(res);
 };
 
 // ─── Register ─────────────────────────────────────────────────────────────────
@@ -178,7 +167,13 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 const logoutUser = catchAsync(async (req: Request, res: Response) => {
     const sessionToken = req.cookies["better-auth.session_token"];
-    await AuthService.logoutUser(sessionToken);
+    try {
+        if (sessionToken) {
+            await AuthService.logoutUser(sessionToken);
+        }
+    } catch {
+        // Still clear cookies even if session revoke fails (e.g. expired token)
+    }
 
     clearAuthCookies(res);
 

@@ -61,6 +61,8 @@ const summary = catchAsync(async (req: Request, res: Response) => {
 const topProducts = catchAsync(async (req: Request, res: Response) => {
     const data = await SaleService.getTopProducts(
         req.query.limit ? Number(req.query.limit) : 5,
+        typeof req.query.dateFrom === "string" ? req.query.dateFrom : undefined,
+        typeof req.query.dateTo === "string" ? req.query.dateTo : undefined,
     );
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, data });
 });
