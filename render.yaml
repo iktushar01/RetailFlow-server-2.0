@@ -1,10 +1,12 @@
+# Dashboard services ignore this file unless deployed as a Blueprint.
+# In Render Settings set: Root Directory = (empty), Start Command = pnpm start
 services:
   - type: web
     name: retailflow-server
     runtime: node
     plan: free
     buildCommand: pnpm install --frozen-lockfile
-    startCommand: pnpm start
+    startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
         value: production
