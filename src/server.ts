@@ -1,6 +1,6 @@
-import app from "./app";
-import { envVars } from "./config/env";
-import { seedSuperAdmin } from "./app/utils/seed";
+import app from "./app.js";
+import { envVars } from "./config/env.js";
+import { seedSuperAdmin } from "./app/utils/seed.js";
 
 // Load .env only in development
 if (process.env.NODE_ENV !== "production") {

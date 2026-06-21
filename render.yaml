@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: retailflow-server
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production

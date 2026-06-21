@@ -6,9 +6,13 @@
   "author": "",
   "type": "module",
   "main": "src/server.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
+    "postinstall": "prisma generate",
     "build": "prisma generate && tsc && node scripts/copy-generated-prisma.js && node scripts/fix-imports.js",
     "migrate:data": "tsx scripts/migrate-mongo-to-postgres.ts",
     "test:integration": "tsx scripts/test-integration.ts"
@@ -34,6 +38,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.2",
     "pg": "^8.18.0",
+    "tsx": "^4.21.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -49,7 +54,6 @@
     "@typescript-eslint/parser": "^8.55.0",
     "eslint": "^9.39.2",
     "ts-node-dev": "^2.0.0",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
