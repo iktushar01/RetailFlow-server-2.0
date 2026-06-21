@@ -5,11 +5,11 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@10.34.4",
   "main": "src/server.ts",
   "engines": {
     "node": "20.18.0",
-    "pnpm": "11.8.0"
+    "pnpm": "10.34.4"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
