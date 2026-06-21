@@ -40,12 +40,12 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.2",
     "pg": "^8.18.0",
+    "prisma": "^7.5.0",
     "tsx": "^4.21.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "mongodb": "^6.20.0",
-    "prisma": "^7.5.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
