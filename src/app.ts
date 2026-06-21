@@ -1,5 +1,5 @@
 import express, { Application, NextFunction, Request, Response } from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import cookieParser from "cookie-parser";
 import { toNodeHandler } from "better-auth/node";
 import path from "node:path";
@@ -15,8 +15,31 @@ const app: Application = express();
 app.set("view engine", "ejs");
 app.set("views",path.resolve(process.cwd(), `src/app/templates`) )
 
-const corsOptions = {
-    origin: [envVars.FRONTEND_URL, envVars.BETTER_AUTH_URL, "http://localhost:3000", "http://localhost:5173", "http://localhost:5000"],
+const normalizeOrigin = (origin: string) => origin.replace(/\/$/, "");
+
+const allowedOrigins = new Set(
+    [
+        envVars.FRONTEND_URL,
+        envVars.BETTER_AUTH_URL,
+        ...envVars.FRONTEND_URLS,
+        "https://retail-flow-client.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5000",
+    ]
+        .filter(Boolean)
+        .map(normalizeOrigin),
+);
+
+const corsOptions: CorsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`CORS blocked origin: ${origin}`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
