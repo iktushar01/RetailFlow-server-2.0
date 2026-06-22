@@ -1,11 +1,11 @@
 import AppError from "../../errorHelpers/AppError";
 import { prisma } from "../../lib/prisma";
+import { Prisma } from "../../lib/prisma-exports";
 import { StatusCodes } from "http-status-codes";
 import {
     toMongoDeleteResult,
     toMongoDoc,
     toMongoDocs,
-    toMongoUpdateResult,
 } from "../../utils/mongoCompat";
 import {
     ISupplierPayload,
@@ -48,12 +48,12 @@ const update = async (id: string, payload: ISupplierUpdatePayload) => {
         throw new AppError(StatusCodes.NOT_FOUND, "Supplier not found");
     }
 
-    await prisma.supplier.update({
+    const supplier = await prisma.supplier.update({
         where: { id },
         data: payload,
     });
 
-    return toMongoUpdateResult();
+    return toMongoDoc(supplier);
 };
 
 const remove = async (id: string) => {
@@ -62,7 +62,21 @@ const remove = async (id: string) => {
         throw new AppError(StatusCodes.NOT_FOUND, "Supplier not found");
     }
 
-    await prisma.supplier.delete({ where: { id } });
+    try {
+        await prisma.supplier.delete({ where: { id } });
+    } catch (err) {
+        if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2003"
+        ) {
+            throw new AppError(
+                StatusCodes.CONFLICT,
+                "Cannot delete supplier with linked purchase orders, GRNs, or payments.",
+            );
+        }
+        throw err;
+    }
+
     return toMongoDeleteResult();
 };
 
