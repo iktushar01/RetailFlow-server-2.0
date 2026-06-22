@@ -369,6 +369,14 @@ const approve = async (id: string) => {
     return { message: "GRN approved successfully", result: toMongoUpdateResult() };
 };
 
+const reject = async (id: string) => {
+    const result = await remove(id);
+    return {
+        message: "GRN rejected successfully. Inventory and PO status reverted.",
+        ...result,
+    };
+};
+
 export const GrnService = {
     getAll,
     getById,
@@ -377,4 +385,5 @@ export const GrnService = {
     update,
     remove,
     approve,
+    reject,
 };

@@ -38,5 +38,10 @@ router.patch(
     validateRequest(grnIdParamSchema, "params"),
     GrnController.approve,
 );
+router.patch(
+    "/:id/reject",
+    validateRequest(grnIdParamSchema, "params"),
+    GrnController.reject,
+);
 
 export const GrnRoutes = router;

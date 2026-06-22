@@ -38,6 +38,11 @@ const approve = catchAsync(async (req: Request, res: Response) => {
     res.send(result);
 });
 
+const reject = catchAsync(async (req: Request, res: Response) => {
+    const result = await GrnService.reject(String(req.params.id));
+    res.send(result);
+});
+
 export const GrnController = {
     getAll,
     getCumulativeReceivedByPo,
@@ -46,4 +51,5 @@ export const GrnController = {
     update,
     remove,
     approve,
+    reject,
 };
