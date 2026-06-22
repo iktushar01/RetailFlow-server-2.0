@@ -41,7 +41,7 @@ export const toMongoDoc = <T extends Identifiable>(
 ): Record<string, unknown> => {
     const { id, ...rest } = doc;
     const serialized = serializeValue(rest) as Record<string, unknown>;
-    return { _id: id, ...serialized };
+    return { _id: id, id, ...serialized };
 };
 
 export const toMongoDocs = <T extends Identifiable>(docs: T[]) =>
